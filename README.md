@@ -57,7 +57,9 @@ We calculate the visibility of targets in the Whats Up database by filtering onl
 
 The form/API expects the following querystring parameters:
 * `start` - format must be `YYY-MM-DDTHH:MM:SS` in UTC,
-* `site` - 3-letter site code for LCO sites. Options `ogg`, `coj`, `elp`, `lsc`, or `cpt`.
+* `site` (optional) - 3-letter site code for LCO sites. Options `ogg`, `coj`, `elp`, `lsc`, or `cpt`. Overrides `lat` and `lon` if supplied.
+* `lat` (required if `site` not specified) - latitude of location, specified as a signed float.
+* `lon` (required if `site` not specified) - longitude of location, specified as a signed float.
 * `aperture` - size of telescope. Options `2m0`, `1m0`, or `0m4`.
 * `category` (optional) - filter by AVM category of target, e.g. `5.1.1` = Spiral Galaxies
 * `mode` (optional) - Options are `rti` or `normal`(default). `rti` filters the results to only those with exposure times < 600s. `normal` does not provide any filtering.
@@ -68,6 +70,11 @@ The form/API expects the following querystring parameters:
 Using required arguments only `start`, `aperture` and `site`:
 ```
 https://lco.global/whatsup/search/?start=2017-08-08T09:28:10&aperture=0m4&site=ogg
+```
+
+Using required arguments only `start`, `aperture`, `lat`, and `lon`:
+```
+https://lco.global/whatsup/search/?start=2017-08-08T09:28:10&aperture=0m4&lat=20.7075&lon=-156.256111
 ```
 
 A full example of all available arguments is:
