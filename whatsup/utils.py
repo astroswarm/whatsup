@@ -3,13 +3,10 @@ from datetime import datetime
 from astropy import units as u
 from astropy.coordinates import earth_orientation as earth
 from astropy.time import Time
-from django.conf import settings
 from django.db.models import Q
 from numpy import sin, cos, arcsin, arccos, pi, arctan2, radians, degrees, floor
 
 from .models import Target
-
-coords = settings.COORDS
 
 def eqtohorizon(hour, dec, lat):
     """
@@ -25,13 +22,13 @@ def eqtohorizon(hour, dec, lat):
     return arccos(cos_az) * 180. / pi, alt_rad * 180. / pi
 
 
-def calc_lst(start, site):
+def calc_lst(start, lon):
     """
     Calculate local siderial time at a given location and at a specific date/time
     """
     t1 = Time(start, scale='utc')
     mjd = t1.jd - 2451545.000
-    tel_long_deg = coords[site]['lon']
+    tel_long_deg = lon
     UT = t1.datetime.hour + t1.datetime.minute/60. + t1.datetime.second/3600.
     n, lst_deg = divmod(100.46 + 0.985647 * mjd + tel_long_deg + 15.*UT, 360.)
     lst_hours = lst_deg/15.

@@ -82,6 +82,8 @@ class TargetSerializerQuerystring(serializers.Serializer):
     This serializer is only used to validate querystring parameters in the api.
     """
     site = serializers.ChoiceField(choices=sites, required=False)
+    lat = serializers.FloatField(required=False)
+    lon = serializers.FloatField(required=False)
     start = serializers.DateTimeField()
     aperture = serializers.ChoiceField(required=False, choices=APERTURES)
     full = serializers.ChoiceField(required=False, choices=(('true', ''), ('false', ''), ('messier', '')))
@@ -89,10 +91,10 @@ class TargetSerializerQuerystring(serializers.Serializer):
 
     def is_valid(self, raise_exception=True):
         super(TargetSerializerQuerystring, self).is_valid(raise_exception)
-        if self.data.get('site', '') and not self.data.get('start', ''):
-            raise serializers.ValidationError("You must provide start date/time and a site.")
-        elif not self.data.get('site', ''):
-            raise serializers.ValidationError("You must provide a site code.")
+        if not self.data.get('start', ''):
+            raise serializers.ValidationError("You must provide a start date/time.")
+        elif not self.data.get('site', '') and (not self.data.get('lat', '') or not self.data.get('lon', '')):
+            raise serializers.ValidationError("You must provide a site code or a lat and lon.")
         elif not self.data.get('aperture', ''):
             raise serializers.ValidationError("You must provide an aperture.")
 
@@ -101,6 +103,8 @@ class RangeTargetSerializerQuerystring(serializers.Serializer):
     This serializer is only used to validate querystring parameters in the api.
     """
     site = serializers.ChoiceField(choices=sites, required=False)
+    lat = serializers.FloatField(required=False)
+    lon = serializers.FloatField(required=False)
     start = serializers.DateTimeField()
     end = serializers.DateTimeField(required=False)
     aperture = serializers.ChoiceField(required=False, choices=APERTURES)

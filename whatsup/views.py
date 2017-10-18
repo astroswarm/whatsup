@@ -85,7 +85,9 @@ class TargetListView(APIView):
     """
     Returns the list of Targets with filters applied:
     :param: start (required) - YYYY-MM-DDTHH:MM:SS
-    :param: site (required) - LCO 3-letter site code
+    :param: site (optional) - LCO 3-letter site code
+    :param: lat (required if site omitted) - Latitude as a signed float
+    :param: lon (required if site omitted) - Longitude as a signed float
     :param: aperture (required) - LCO 3-letter telescope class
     :param: full (optional) - Show full or truncated list of results, true/false
     :param: category (optional) - filter by AVM category of target
@@ -100,6 +102,8 @@ class TargetListView(APIView):
         serializer = AdvTargetSerializer(targets, many=True)
         content = {'targets': serializer.data,
                    'site': request.query_params.get('site', ''),
+                   'lat': request.query_params.get('lat', ''),
+                   'lon': request.query_params.get('lon', ''),
                    'datetime': request.query_params.get('start', ''),
                    'count' : len(targets)}
         return Response(content)
@@ -130,6 +134,8 @@ class TargetListRangeView(APIView):
         serializer = AdvTargetSerializer(targets, many=True)
         content = {'targets': serializer.data,
                    'site': request.query_params.get('site', ''),
+                   'lat': request.query_params.get('lat', ''),
+                   'lon': request.query_params.get('lon', ''),
                    'datetime': request.query_params.get('start', ''),
                    'count' : len(targets)}
         return Response(content)
@@ -139,19 +145,29 @@ def search_targets(query_params):
     if not query_params:
         return []
     site = query_params.get('site', '')
+    lat = float(query_params.get('lat', 0.0))
+    lon = float(query_params.get('lon', 0.0))
+    if site != '':
+        lat = coords[site]['lat']
+        lon = coords[site]['lon']
     start = query_params.get('start', '')
     callback = query_params.get('callback', '')
     category = query_params.get('category', '')
     s1 = datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
     aperture = query_params.get('aperture', None)
     mode = query_params.get('mode', None)
-    targets = visible_targets(start, site, aperture=aperture, category=category, mode=mode)
+    targets = visible_targets(start, lat, lon, aperture=aperture, category=category, mode=mode)
     return targets
 
 def range_targets(query_params):
     if not query_params:
         return []
     site = query_params.get('site', '')
+    lat = float(query_params.get('lat', 0.0))
+    lon = float(query_params.get('lon', 0.0))
+    if site != '':
+        lat = coords[site]['lat']
+        lon = coords[site]['lon']
     start = query_params.get('start', '')
     end = query_params.get('end', '')
     callback = query_params.get('callback', '')
@@ -199,13 +215,13 @@ def targets_not_behind_sun(start, aperture=None, category=None):
     return tgs
 
 
-def visible_targets(start, site, name=None, aperture=None, category=None, mode=None):
+def visible_targets(start, lat, lon, name=None, aperture=None, category=None, mode=None):
     """
     Produce a list of targets which visible to observer at specified date/time
     """
     # start=  "2014-07-21T14:00:00"
     # Find which targets are in the correct RA range, i.e. LST +/-3.5hours
-    lst = calc_lst(start, site)
+    lst = calc_lst(start, lon)
     lst_deg = (lst * u.hourangle).to(u.deg)/u.deg
     dha = (3.5*u.hourangle).to(u.deg)/u.deg
     s0 = lst_deg - dha if (lst_deg - dha) > 0. else lst_deg - dha + 360.
@@ -222,7 +238,7 @@ def visible_targets(start, site, name=None, aperture=None, category=None, mode=N
     # # Filter these targets by which are above (horizon + 30deg) for observer
     for t in tgs:
         hour = lst - float((t.ra * u.deg).to(u.hourangle) / u.hourangle)
-        az, alt = eqtohorizon(hour, t.dec, coords[site]['lat'])
+        az, alt = eqtohorizon(hour, t.dec, lat)
         if alt >= 30.:
             targets.append(t)
     return targets
